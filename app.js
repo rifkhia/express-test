@@ -1,12 +1,14 @@
-const express = require('express');
-const usecase = require('./src/usecase/userUsecase')
-const api = require('./src/entity/api')
-const userRouter = require('./src/router/userRouter')
+require("dotenv").config();
+
+const express = require("express");
+const userRouter = require("./src/router/userRouter");
+const tokenRouter = require("./src/router/tokenRouter");
 
 const app = express();
 
-app.use('/user', userRouter)
+app.use("/user", userRouter);
+app.use("/refresh", tokenRouter);
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
+app.listen(3001, () => {
+  console.log("Server is running on port 3000");
 });

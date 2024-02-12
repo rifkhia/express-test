@@ -1,51 +1,121 @@
-const repo = require('../repository/userRepository')
-const UserRepository = require("../repository/userRepository");
-const validator = require('validator');
-const {CustomError} = require('../entity/api')
+require("dotenv").config();
+
+const repo = require("../repository/userRepository");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { StatusCode, Role } = require("../utils/const");
+const validator = require("validator");
+const { CustomError, JWTResponse } = require("../entity/api");
 // const api = require('../entity/api')
 
 class UserUsecase {
-    constructor(userRepository) {
-        this.userRepository = userRepository;
+  constructor(userRepository) {
+    this.userRepository = userRepository;
+  }
+
+  async getUsers() {
+    try {
+      return await this.userRepository.fetchAllUsers();
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getProfile(userId) {
+    try {
+      return await this.userRepository.fetchUser(userId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async loginUsers(userDTO) {
+    if (!userDTO.email || !userDTO.password) {
+      throw new CustomError("missing required field", 400);
     }
 
-    async getUsers() {
-        try {
-            return await this.userRepository.fetchUsers()
-        } catch (error) {
-            throw error
-        }
+    try {
+      const user = await this.userRepository.fetchUserEmail(userDTO.email);
+
+      if (await bcrypt.compare(userDTO.password, user.password)) {
+        const accessToken = jwt.sign(
+          {
+            userId: user.id,
+            role: Role.ROLE_USER,
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: "5m" },
+        );
+
+        const refreshToken = jwt.sign(
+          {
+            userId: user.id,
+            accessToken: accessToken,
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: "1d" },
+        );
+        return new JWTResponse(accessToken, refreshToken);
+      }
+      throw new CustomError(
+        "password missmatch",
+        StatusCode.STATUS_BAD_REQUEST,
+      );
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async registerUser(userDTO) {
+    if (!userDTO.username || !userDTO.password || !userDTO.email) {
+      throw new CustomError(
+        "missing required field",
+        StatusCode.STATUS_BAD_REQUEST,
+      );
     }
 
-    async loginUsers(email, password) {
-        try {
-            if(!email || !password){
-                throw new CustomError("missing required field", 400)
-            }
-
-            const user = await this.userRepository.fetchUserEmail(email)
-            return user.password === password;
-        } catch (error) {
-            throw error
-        }
+    if (!validator.isEmail(userDTO.email)) {
+      throw new CustomError(
+        "not a correct email format",
+        StatusCode.STATUS_BAD_REQUEST,
+      );
     }
 
-    async registerUser(user){
-        try {
-            if(!user.username || !user.password || !user.email){
-                throw new CustomError("missing required field", 400)
-            }
+    try {
+      userDTO.password = await bcrypt.hash(userDTO.password, 10);
 
-            if(!validator.isEmail(user.email)){
-                throw new CustomError("not a correct email format", 400)
-            }
+      await this.userRepository.insertUser(userDTO);
 
-            await this.userRepository.insertUser(user)
-        } catch (error) {
-            throw error
-        }
+      const accessToken = jwt.sign(
+        {
+          userId: userDTO.id,
+          role: Role.ROLE_USER,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "5m" },
+      );
+
+      const refreshToken = jwt.sign(
+        {
+          userId: userDTO.id,
+          accessToken: accessToken,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" },
+      );
+      return new JWTResponse(accessToken, refreshToken);
+    } catch (error) {
+      throw error;
     }
+  }
 
+  async deleteUser(userId) {
+    try {
+      await this.userRepository.deleteUser(userId);
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 
-module.exports = UserUsecase
+module.exports = UserUsecase;

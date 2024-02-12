@@ -1,44 +1,82 @@
-const express = require('express');
-const dto = require('../dto/users')
-const UserUseCase = require('../usecase/userUseCase');
-const UserRepository = require('../repository/userRepository');
-const api = require('../entity/api')
+const express = require("express");
+const dto = require("../dto/users");
+const UserUseCase = require("../usecase/userUsecase");
+const UserRepository = require("../repository/userRepository");
+const { StatusCode } = require("../utils/const");
+const response = require("../entity/api");
+const verifyTokenUser = require("../middleware/authMiddleware");
+const { UserRegisterDTO, UserLoginDTO } = require("../dto/users");
 
-const router = express.Router();
+const userRouter = express.Router();
 
 const userRepository = new UserRepository();
 const userUseCase = new UserUseCase(userRepository);
 
-router.use(express.json())
+userRouter.use(express.json());
 
-router.get('/', async (req, res) => {
-    try {
-        const result = await userUseCase.getUsers()
-        return res.status(200).json(new api.ApiResponse('success retrieving users', result));
-    } catch (err) {
-        return res.status(err.statusCode).json(new api.ApiResponse(err.message));
-    }
+userRouter.get("/", async (req, res) => {
+  try {
+    const result = await userUseCase.getUsers();
+    return res
+      .status(200)
+      .json(new response.ApiResponse("success retrieving users", result));
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({ message: err.message });
+  }
 });
 
-router.post('/login', async (req, res)=> {
-    try {
-        const {email, password} = req.body
-        await userUseCase.loginUsers(email, password)
-        return res.status(200).json(new api.ApiResponse('success login', "blabla"));
-    } catch (err){
-        return res.status(err.statusCode).json(new api.ApiResponse(err.message))
-    }
-})
+userRouter.get("/profile", verifyTokenUser, async (req, res) => {
+  try {
+    const { userId } = req;
+    const responseData = await userUseCase.getProfile(userId);
+    res
+      .status(StatusCode.STATUS_OK)
+      .json(new response.ApiResponse("success getting profile", responseData));
+  } catch (error) {
+    throw error;
+  }
+});
 
-router.post('/register', async(req, res)=>{
-    try {
-        const {username, email, password} = req.body
-        const userDTO = new dto.UserRegisterDTO(username, email, password)
-        await userUseCase.registerUser(userDTO)
-        return res.status(201).json(new api.ApiResponse('success register', "blabla"));
-    } catch (err) {
-        return res.status(err.statusCode).json(new api.ApiResponse(err.message))
-    }
-})
+userRouter.delete("/profile", verifyTokenUser, async (req, res) => {
+  try {
+    const { userId } = req;
+    await userUseCase.deleteUser(userId);
+    res.status(StatusCode.STATUS_OK).json({ message: "success delete user" });
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({ message: err.message });
+  }
+});
 
-module.exports = router;
+userRouter.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const userDTO = new UserLoginDTO(email, password);
+    const responseData = await userUseCase.loginUsers(userDTO);
+    res.cookie("refreshToken", responseData.refreshToken, {
+      httpOnly: true,
+    });
+    return res
+      .status(StatusCode.STATUS_OK)
+      .json(new response.ApiResponse("success login user", responseData));
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({ message: err.message });
+  }
+});
+
+userRouter.post("/register", async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    const userDTO = new dto.UserRegisterDTO(username, email, password);
+    const responseData = await userUseCase.registerUser(userDTO);
+    res.cookie("refreshToken", responseData.refreshToken, {
+      httpOnly: true,
+    });
+    return res
+      .status(201)
+      .json(new response.ApiResponse("success register", responseData));
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({ message: err.message });
+  }
+});
+
+module.exports = userRouter;
