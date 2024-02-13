@@ -31,7 +31,10 @@ class UserUsecase {
 
   async loginUsers(userDTO) {
     if (!userDTO.email || !userDTO.password) {
-      throw new CustomError("missing required field", 400);
+      throw new CustomError(
+        "missing required field",
+        StatusCode.STATUS_BAD_REQUEST,
+      );
     }
 
     try {

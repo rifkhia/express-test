@@ -1,7 +1,7 @@
 const express = require("express");
 const userRouter = express.Router();
 
-const UserHandler = require("../../router/userHandler");
+const UserHandler = require("../../handler/userHandler");
 const UserUseCase = require("../../usecase/userUsecase");
 const UserRepository = require("../../repository/userRepository");
 

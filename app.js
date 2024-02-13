@@ -1,6 +1,8 @@
 require("dotenv").config();
 
 const expressApp = require("./src/adapters/express/expressAdapter");
-expressApp.listen(3001, () => {
-  console.log("Server is running on port 3000");
+
+const currentPort = process.env.PORT || 3000;
+expressApp.listen(currentPort, () => {
+  console.log("Server is running on port", currentPort);
 });

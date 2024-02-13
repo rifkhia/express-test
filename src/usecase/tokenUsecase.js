@@ -1,14 +1,13 @@
 const jwt = require("jsonwebtoken");
 const { CustomError, JWTResponse } = require("../entity/api");
 const { StatusCode, Role } = require("../utils/const");
+
 class TokenUsecase {
   async refreshToken(accessToken, refreshToken) {
     const refreshTokenDecoded = jwt.verify(
       refreshToken,
       process.env.JWT_SECRET,
     );
-    console.log(refreshTokenDecoded.accessToken);
-    console.log(accessToken);
     if (refreshTokenDecoded.accessToken !== accessToken) {
       throw new CustomError(
         "access token with refresh token missmatch",
