@@ -15,6 +15,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "~1.9.1",
     "pg": "^8.11.3",
+    "prettier": "^3.2.5",
     "pug": "2.0.0-beta11",
     "uuid": "^9.0.1",
     "validator": "^13.11.0"

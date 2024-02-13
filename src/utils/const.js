@@ -11,7 +11,12 @@ class Role {
   static ROLE_USER = "USER";
 }
 
+class SQLError {
+  static UNIQUE_ERROR = "_bt_check_unique";
+}
+
 module.exports = {
   StatusCode,
   Role,
+  SQLError,
 };

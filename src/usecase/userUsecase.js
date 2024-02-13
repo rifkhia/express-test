@@ -1,21 +1,21 @@
 require("dotenv").config();
 
-const repo = require("../repository/userRepository");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { StatusCode, Role } = require("../utils/const");
 const validator = require("validator");
 const { CustomError, JWTResponse } = require("../entity/api");
-// const api = require('../entity/api')
 
 class UserUsecase {
   constructor(userRepository) {
     this.userRepository = userRepository;
   }
 
-  async getUsers() {
+  async getUsers(perpage, page) {
     try {
-      return await this.userRepository.fetchAllUsers();
+      perpage = parseInt(perpage) || 0;
+      page = parseInt(page) || 0;
+      return await this.userRepository.fetchAllUsers(perpage, page);
     } catch (error) {
       throw error;
     }

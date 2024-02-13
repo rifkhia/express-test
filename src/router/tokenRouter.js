@@ -2,6 +2,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const TokenUsecase = require("../usecase/tokenUsecase");
 const response = require("../entity/api");
+const {StatusCode} = require("../utils/const");
 
 const tokenRouter = express.Router();
 
@@ -24,7 +25,9 @@ tokenRouter.post("/", async (req, res) => {
       .status(200)
       .json(new response.ApiResponse("success refreshing token", responseData));
   } catch (err) {
-    return res.status(err.statusCode || 500).json({ message: err.message });
+    return res
+        .status(err.statusCode || StatusCode.STATUS_INTERNAL_SERVER_ERROR)
+        .json({ message: err.message });
   }
 });
 
